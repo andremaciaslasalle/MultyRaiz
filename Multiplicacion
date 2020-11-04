@@ -1,0 +1,56 @@
+#include "p16F628a.inc"
+__CONFIG _FOSC_INTOSCCLK & _WDTE_OFF & _PWRTE_OFF & _MCLRE_OFF & _BOREN_OFF & _LVP_OFF & _CPD_OFF & _CP_OFF
+
+RES_VECT CODE 0x0000 ; processor reset vector
+GOTO START ; go to beginning of program
+; TODO ADD INTERRUPTS HERE IF USED
+MAIN_PROG CODE ; let linker place main program
+ 
+a equ 0x32
+aux equ 0x33
+r equ 0x34
+
+START
+ 
+    MOVLW 0x07
+    MOVWF CMCON
+    BCF STATUS, RP1
+    BSF STATUS, RP0
+    MOVLW b'11111111'
+    MOVWF TRISA
+    MOVLW b'00000000'
+    MOVWF TRISB
+    BCF STATUS, RP0
+    
+inicio:
+    MOVLW d'0'
+    MOVWF r
+    MOVFW PORTA; puerto a en w.
+    MOVWF a ;lo de entrada en a;
+    SWAPF a, 0 ;invierte los bits y lo guarda en w.
+    MOVWF aux ;guarda los bits invertidos en aux.
+    BCF aux, 7; limpia el bit 7 de aux.
+    BCF aux, 6
+    BCF aux, 5
+    BCF aux, 4
+rec:
+    BTFSC a, 0 ;si el bit 0 en a es cero, brinca dos, si no, llama a suma.
+    CALL sum
+    RLF aux, 1;rota 1 bit a la izquierda y lo guarda en aux;
+    BTFSC a, 1
+    CALL sum
+    RLF aux, 1
+    BTFSC a, 2
+    CALL sum
+    RLF aux, 1
+    BTFSC a, 3
+    CALL sum
+    MOVFW r
+    MOVWF PORTB
+    GOTO inicio
+    
+sum:
+    MOVFW aux ;guarda aux en w;
+    ADDWF r, 1 ;suma lo de w con r y lo deja en r.
+    RETURN
+END
